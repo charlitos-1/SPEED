@@ -1,0 +1,46 @@
+.container {
+    margin-bottom: 10px !important;
+    max-width: 90% !important;
+}
+
+h1 {
+    margin-bottom: 10px !important;
+}
+
+h2 {
+    margin-top: 10px !important;
+}
+
+.row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+
+.col {
+    margin-right: 10px !important;
+    max-width: 1000px !important;
+}
+
+label {
+    font-weight: bold !important;
+    width: 100% !important;
+}
+
+input {
+    margin-bottom: 10px !important;
+    width: 100% !important;
+    text-overflow: ellipsis !important;
+}
+
+button {
+    margin: 10px !important;
+}
+
+.dash-table-container {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    max-height: 375px !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    display: block !important;
+}

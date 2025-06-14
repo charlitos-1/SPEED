@@ -1,0 +1,10 @@
+dash
+dash-ag-grid
+dash-bootstrap-components
+flask
+numpy
+pandas
+plotly
+pyarrow
+redis
+sqlite3
