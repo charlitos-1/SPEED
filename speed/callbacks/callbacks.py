@@ -1,9 +1,11 @@
+import os
+import sys
 from dash import html, dcc, Input, Output, State, no_update
 import dash_bootstrap_components as dbc
 import pandas as pd
-import sys
 
-sys.path.append("..")  # Adjust the path to import from the parent directory
+AMAIAS_DIRECTORY = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append(AMAIAS_DIRECTORY)
 
 from database import db
 from layout import layout

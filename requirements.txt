@@ -7,4 +7,3 @@ pandas
 plotly
 pyarrow
 redis
-sqlite3
