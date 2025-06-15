@@ -2,20 +2,26 @@ import os
 import sqlite3
 import pandas as pd
 import re
+import datetime
 
-default_database_file:str = None
-default_database_table_name:str = None
+AMAIAS_DIRECTORY = os.path.dirname(os.path.dirname(__file__))
+THIS_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+DATABASE_PATH = os.path.join(AMAIAS_DIRECTORY, "database", "data.db")
 
-SCHEMA_FILE = os.path.join(os.path.dirname(__file__), "schema.sql")
-
-def set_default_database_file(file_path):
-    global default_database_file
-    default_database_file = file_path
+MINER_TABLE_NAME = "miner_queue"
+SPEED_DATA_TABLE_NAME = "speed_data"
 
 
-def set_default_database_table_name(table_name):
-    global default_database_table_name
-    default_database_table_name = table_name
+def generate_timestamp():
+    """Generate a timestamp for the request."""
+    return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+def initialize_database(schema, database_path, table_name):
+    schema_script = os.path.join(THIS_DIRECTORY, f"{schema}.sql")
+    if not os.path.exists(schema_script):
+        raise FileNotFoundError(f"Schema file {schema_script} does not exist.")
+    execute_sql_script(script=schema_script, db_file=database_path, args={"table_name": table_name})
 
 
 def sql_string_validator(input_string):
@@ -27,37 +33,14 @@ def get_dummy_df(rows=1, columns=1, header_text="Empty", cell_text="No data"):
     return pd.DataFrame({f"{header_text} {i}": [cell_text]*rows for i in range(columns)})
 
 
-def get_db_connection(db_file=None):
+def get_db_connection(db_file):
     """Returns a connection to the SQLite database."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
     return sqlite3.connect(db_file)
 
 
-def initialize_database(db_file=None, table_name=None):
-    """ call database schema creation function to initialize the database and table """
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-    if table_exists(db_file, table_name):
-        return
-    execute_sql_script(SCHEMA_FILE, {"table_name": table_name}, db_file=db_file)
-
-
-def execute_sql_script(script, args=None, db_file=None):
+def execute_sql_script(script, db_file, args=None):
     """Executes a SQL script from a file."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
     conn = get_db_connection(db_file)
     cursor = conn.cursor()
@@ -73,18 +56,9 @@ def execute_sql_script(script, args=None, db_file=None):
     conn.close()
 
 
-def table_exists(db_file=None, table_name=None):
+def table_exists(db_file, table_name):
     """Checks if the specified table exists in the database."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
 
     conn = get_db_connection(db_file)
@@ -95,18 +69,9 @@ def table_exists(db_file=None, table_name=None):
     return exists
 
 
-def add_row(row_data, db_file=None, table_name=None):
+def add_row(row_data, db_file, table_name):
     """Adds a single row to the specified table."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
 
     conn = get_db_connection(db_file)
@@ -115,22 +80,16 @@ def add_row(row_data, db_file=None, table_name=None):
     placeholders = ", ".join(["?"] * len(row_data))
     query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
     cursor.execute(query, tuple(row_data.values()))
+    last_row_id = cursor.lastrowid
     conn.commit()
     conn.close()
-    
-    
-def delete_row(row_id, db_file=None, table_name=None):
-    """Deletes a single row from the specified table. WARNING: Don't use this function unless you know what you're doing."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
+    return last_row_id
+    
+    
+def delete_row(row_id, db_file, table_name):
+    """Deletes a single row from the specified table. WARNING: Don't use this function unless you know what you're doing."""
+
     sql_string_validator(table_name)
         
     if row_id is None:
@@ -147,18 +106,9 @@ def delete_row(row_id, db_file=None, table_name=None):
     conn.close()
 
 
-def add_column(column_name, db_file=None, table_name=None):
+def add_column(column_name, db_file, table_name):
     """Adds a single column to the specified table."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
         
     if column_name in get_column_names(db_file, table_name):
@@ -174,18 +124,9 @@ def add_column(column_name, db_file=None, table_name=None):
     conn.close()
     
     
-def delete_column(column_name, db_file=None, table_name=None):
+def delete_column(column_name, db_file, table_name):
     """Deletes a single column from the specified table. WARNING: Don't use this function unless you know what you're doing."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
         
     if column_name not in get_column_names(db_file, table_name):
@@ -204,17 +145,8 @@ def delete_column(column_name, db_file=None, table_name=None):
     conn.close()
     
     
-def refactor_columns(columns, db_file=None, table_name=None):
+def refactor_columns(columns, db_file, table_name):
     """Refactors the columns of the table. WARNING: Don't use this function unless you know what you're doing."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
-
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
 
     sql_string_validator(table_name)
 
@@ -233,18 +165,9 @@ def refactor_columns(columns, db_file=None, table_name=None):
     return [column.replace(" ", "") for column in columns]
 
 
-def edit_cell(row_id, column_name, new_value, db_file=None, table_name=None):
+def edit_cell(row_id, column_name, new_value, db_file, table_name):
     """Edits a single cell in the specified table."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
 
     if column_name not in get_column_names(db_file, table_name):
@@ -260,18 +183,9 @@ def edit_cell(row_id, column_name, new_value, db_file=None, table_name=None):
     conn.close()
     
     
-def edit_row(row_id, new_row_data, db_file=None, table_name=None):
+def edit_row(row_id, new_row_data, db_file, table_name):
     """Edits a single row in the specified table."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
 
     conn = get_db_connection(db_file)
@@ -283,18 +197,9 @@ def edit_row(row_id, new_row_data, db_file=None, table_name=None):
     conn.close()
     
     
-def get_row(row_id, db_file=None, table_name=None):
+def get_row(row_id, db_file, table_name):
     """Returns a single row as a dictionary."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
 
     conn = get_db_connection(db_file)
@@ -304,18 +209,21 @@ def get_row(row_id, db_file=None, table_name=None):
     return row
 
 
-def get_column(column_name, db_file=None, table_name=None):
-    """Returns a single column as a pandas Series with the id as the index."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
+def get_matching_rows(db_file, table_name, args):
+    """Returns rows that match the specified arguments as a list of dictionaries."""
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
+    sql_string_validator(table_name)
+
+    conn = get_db_connection(db_file)
+    query = f"SELECT * FROM {table_name} WHERE {' AND '.join([f'{k} = ?' for k in args.keys()])}"
+    rows = pd.read_sql_query(query, conn, params=list(args.values())).to_dict("records")
+    conn.close()
+    return rows
+
+
+def get_column(column_name, db_file, table_name):
+    """Returns a single column as a pandas Series with the id as the index."""
+
     sql_string_validator(table_name)
         
     if column_name not in get_column_names(db_file, table_name):
@@ -330,18 +238,9 @@ def get_column(column_name, db_file=None, table_name=None):
     return series
 
 
-def get_table_as_df(db_file=None, table_name=None):
+def get_table_as_df(db_file, table_name):
     """Returns the specified table as a pandas DataFrame."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
 
     conn = get_db_connection(db_file)
@@ -351,18 +250,9 @@ def get_table_as_df(db_file=None, table_name=None):
     return df
 
 
-def get_table_as_list(db_file=None, table_name=None):
+def get_table_as_list(db_file, table_name):
     """Returns the specified table as a list of dictionaries."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
 
     conn = get_db_connection(db_file)
@@ -372,18 +262,9 @@ def get_table_as_list(db_file=None, table_name=None):
     return table
 
 
-def is_primary_key(column_name, db_file=None, table_name=None):
+def is_primary_key(column_name, db_file, table_name):
     """Returns whether the specified column is a primary key."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
 
     conn = get_db_connection(db_file)
@@ -394,18 +275,9 @@ def is_primary_key(column_name, db_file=None, table_name=None):
     return column_name == columns[0][1]
 
 
-def get_column_names(db_file=None, table_name=None):
+def get_column_names(db_file, table_name):
     """Returns the columns of the specified table."""
-    if db_file is None:
-        if default_database_file is None:
-            raise ValueError("Database file is not set.")
-        db_file = default_database_file
 
-    if table_name is None:
-        if default_database_table_name is None:
-            raise ValueError("Database table name is not set.")
-        table_name = default_database_table_name
-        
     sql_string_validator(table_name)
 
     conn = get_db_connection(db_file)

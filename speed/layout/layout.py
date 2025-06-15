@@ -6,13 +6,10 @@ import dash_ag_grid as dag
 def serve_column_defs(columns):
     column_sizes = {
         "id": {"width": 25, "minWidth": 100, "maxWidth": 500},
-        "Input1": {"width": 100, "minWidth": 100, "maxWidth": 500},
-        "Input2": {"width": 100, "minWidth": 100, "maxWidth": 500},
-        "Input3": {"width": 100, "minWidth": 100, "maxWidth": 500},
-        "Input4": {"width": 100, "minWidth": 100, "maxWidth": 500},
-        "Input5": {"width": 100, "minWidth": 100, "maxWidth": 500},
-        "Input6": {"width": 100, "minWidth": 100, "maxWidth": 500},
-        "Status": {"width": 100, "minWidth": 100, "maxWidth": 500},
+        "name": {"width": 100, "minWidth": 100, "maxWidth": 500},
+        "date": {"width": 100, "minWidth": 100, "maxWidth": 500},
+        "product": {"width": 100, "minWidth": 100, "maxWidth": 500},
+        "output_folder": {"width": 100, "minWidth": 100, "maxWidth": 500},
     }
     
     column_defs = [

@@ -15,16 +15,16 @@ from layout import layout
 from callbacks import callbacks
 from database import db
 
+SPEED_DATA_TABLE_NAME = "speed_data"
+
 app = Dash("SPEED", assets_folder=ASSETS_PATH)
 app.layout = layout.serve_layout()
 callbacks.register_callbacks(app)
 
 
 def main():
-    db.set_default_database_file(DATABASE_PATH)
-    db.set_default_database_table_name(DATABASE_TABLE_NAME)
-    db.initialize_database()
-    app.run(debug=True)
+    db.initialize_database(schema=SPEED_DATA_TABLE_NAME, database_path=db.DATABASE_PATH, table_name=SPEED_DATA_TABLE_NAME)
+    app.run(host="0.0.0.0", port=5050, debug=True)
 
 
 if __name__ == "__main__":

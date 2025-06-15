@@ -19,9 +19,9 @@ def register_callbacks(app):
         prevent_initial_call="initial_call_duplicate"
     )
     def refresh_database_table(database_store):
-        database_store = db.get_table_as_df().to_dict("records")
+        database_store = db.get_table_as_df(db.DATABASE_PATH, db.SPEED_DATA_TABLE_NAME).to_dict("records")
         row_data = [_ for _ in database_store]
-        column_defs = layout.serve_column_defs(db.get_column_names())
+        column_defs = layout.serve_column_defs(db.get_column_names(db.DATABASE_PATH, db.SPEED_DATA_TABLE_NAME))
         
         return row_data, column_defs, database_store
 
